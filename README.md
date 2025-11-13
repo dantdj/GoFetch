@@ -10,4 +10,4 @@ The HTTP spec has a few interesting headers for supporting this:
 * [Content-Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Range) - this header is returned on a `206 Partial Content` response to indicate which bytes the response contains
 * [Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range) - this header is included in requests to a server to download a file, and specifies the range of bytes that is being requested
 
-This application largely makes use of the last header.
+This application largely makes use of the last two headers.

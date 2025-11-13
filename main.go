@@ -23,12 +23,12 @@ func main() {
 }
 
 func downloadFile(url string, filepath string) error {
-	initialState := DownloadState{}
+	state := DownloadState{}
 
 	var isResuming bool
 	// Can ignore error here - if file doesn't exist, we start fresh.
 	if info, err := os.Stat(filepath); err == nil {
-		initialState.CurrentBytes = info.Size()
+		state.CurrentBytes = info.Size()
 		isResuming = true
 		fmt.Printf("Resuming download for %s...\n", filepath)
 	}
@@ -46,8 +46,8 @@ func downloadFile(url string, filepath string) error {
 		return err
 	}
 
-	if isResuming && initialState.CurrentBytes > 0 {
-		req.Header.Set("Range", "bytes="+strconv.FormatInt(initialState.CurrentBytes, 10)+"-")
+	if isResuming && state.CurrentBytes > 0 {
+		req.Header.Set("Range", "bytes="+strconv.FormatInt(state.CurrentBytes, 10)+"-")
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -72,18 +72,30 @@ func downloadFile(url string, filepath string) error {
 
 	totalStr := resp.Header.Get("Content-Length")
 	if totalStr != "" {
-		initialState.TotalBytes, err = strconv.ParseInt(totalStr, 10, 64)
+		state.TotalBytes, err = strconv.ParseInt(totalStr, 10, 64)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Could not parse Content-Length: %v\n", err)
 		}
 		if isResuming {
-			initialState.TotalBytes += initialState.CurrentBytes
+			state.TotalBytes += state.CurrentBytes
+		}
+	}
+
+	// Check for Content-Range header to get total size if resuming
+	// and Content-Length is not the full size.
+	if rangeHeader := resp.Header.Get("Content-Range"); rangeHeader != "" {
+		parts := strings.Split(rangeHeader, "/")
+		if len(parts) == 2 {
+			totalBytesStr := parts[1]
+			if totalBytes, err := strconv.ParseInt(totalBytesStr, 10, 64); err == nil {
+				state.TotalBytes = totalBytes
+			}
 		}
 	}
 
 	progressBar := &ProgressBar{
-		total:   initialState.TotalBytes,
-		current: initialState.CurrentBytes,
+		total:   state.TotalBytes,
+		current: state.CurrentBytes,
 		start:   time.Now(),
 	}
 
