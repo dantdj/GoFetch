@@ -1,5 +1,5 @@
 # GoFetch
-Download manager written in Go to experiment with resumable downloads.
+Basic terminal-based download manager written in Go to experiment with resumable downloads.
 
 Includes a basic system to indicate progress, as well as allowing resuming of failed downloads.
 
